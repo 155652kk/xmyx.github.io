@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    canvas {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>小明游戏</h1>
+   <h3>作者LZM</h3>
+  <h4>不定期更新</h4>
+
+  <button onclick="startGame1()">游戏 1：太空射击游戏</button>
+  <button onclick="startGame2()">游戏 2：迷宫寻宝游戏</button>
+  <button onclick="startGame3()">游戏 3：塔防游戏（简易版）</button>
+
+  <canvas id="gameCanvas1" width="800" height="600"></canvas>
+  <canvas id="gameCanvas2" width="800" height="600"></canvas>
+  <canvas id="gameCanvas3" width="800" height="600"></canvas>
+
+  <script>
+    // 游戏 1：太空射击游戏
+
+    let canvas1;
+    let ctx1;
+    let spaceship;
+    let bullets = [];
+    let asteroids = [];
+    let score1 = 0;
+
+    function startGame1() {
+      canvas1 = document.getElementById('gameCanvas1');
+      ctx1 = canvas1.getContext('2d');
+
+      // 创建飞船
+      spaceship = {
+        x: canvas1.width / 2,
+        y: canvas1.height - 50,
+        width: 50,
+        height: 50,
+        speed: 5
+      };
+
+      // 生成小行星
+      setInterval(addAsteroid, 2000);
+
+      document.addEventListener('keydown', handleKeyDown1);
+      document.addEventListener('keyup', handleKeyUp1);
+
+      setInterval(gameLoop1, 30);
+    }
+
+    function handleKeyDown1(e) {
+      if (e.key === 'ArrowLeft') {
+        spaceship.moveLeft = true;
+      } else if (e.key === 'ArrowRight') {
+        spaceship.moveRight = true;
+      } else if (e.key === ' ') {
+        fireBullet();
+      }
+    }
+
+    function handleKeyUp1(e) {
+      if (e.key === 'ArrowLeft') {
+        spaceship.moveLeft = false;
+      } else if (e.key === 'ArrowRight') {
+        spaceship.moveRight = false;
+      }
+    }
+
+    function fireBullet() {
+      bullets.push({
+        x: spaceship.x + spaceship.width / 2,
+        y: spaceship.y,
+        speed: 10
+      });
+    }
+
+    function addAsteroid() {
+      const size = Math.random() * 30 + 20;
+      asteroids.push({
+        x: Math.random() * (canvas1.width - size),
+        y: -size,
+        width: size,
+        height: size,
+        speed: Math.random() * 3 + 1
+      });
+    }
+
+    function gameLoop1() {
+      update1();
+      draw1();
+    }
+
+    function update1() {
+      // 移动飞船
+      if (spaceship.moveLeft && spaceship.x > 0) {
+        spaceship.x -= spaceship.speed;
+      } else if (spaceship.moveRight && spaceship.x < canvas1.width - spaceship.width) {
+        spaceship.x += spaceship.speed;
+      }
+
+      // 移动子弹
+      for (let i = 0; i < bullets.length; i++) {
+        bullets[i].y -= bullets[i].speed;
+        if (bullets[i].y < 0) {
+          bullets.splice(i, 1);
+          i--;
+        }
+      }
+
+      // 移动小行星
+      for (let i = 0; i < asteroids.length; i++) {
+        asteroids[i].y += asteroids[i].speed;
+        if (asteroids[i].y > canvas1.height) {
+          asteroids.splice(i, 1);
+          i--;
+        }
+      }
+
+      // 检测碰撞
+      for (let i = 0; i < asteroids.length; i++) {
+        for (let j = 0; j < bullets.length; j++) {
+          if (checkCollision(bullets[j], asteroids[i])) {
+            asteroids.splice(i, 1);
+            bullets.splice(j, 1);
+            i--;
+            j--;
+            score1++;
+            break;
+          }
+        }
+        if (checkCollision(spaceship, asteroids[i])) {
+          endGame1();
+        }
+      }
+    }
+
+    function draw1() {
+      ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+
+      // 绘制飞船
+      ctx1.fillStyle = 'gray';
+      ctx1.fillRect(spaceship.x, spaceship.y, spaceship.width, spaceship.height);
+
+      // 绘制子弹
+      ctx1.fillStyle = 'yellow';
+      for (let i = 0; i < bullets.length; i++) {
+        ctx1.fillRect(bullets[i].x - 2, bullets[i].y - 5, 4, 10);
+      }
+
+      // 绘制小行星
+      ctx1.fillStyle = 'brown';
+      for (let i = 0; i < asteroids.length; i++) {
+        ctx1.fillRect(asteroids[i].x, asteroids[i].y, asteroids[i].width, asteroids[i].height);
+      }
+
+      // 绘制分数
+      ctx1.fillStyle = 'white';
+      ctx1.font = '20px Arial';
+      ctx1.fillText('Score: ' + score1, 10, 30);
+    }
+
+    function checkCollision(a, b) {
+      return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+    }
+
+    function endGame1() {
+      ctx1.fillStyle = 'red';
+      ctx1.font = '50px Arial';
+      ctx1.fillText('Game Over', canvas1.width / 2 - 150, canvas1.height / 2);
+      document.removeEventListener('keydown', handleKeyDown1);
+      document.removeEventListener('keyup', handleKeyUp1);
+    }
+
+    // 游戏 2：迷宫寻宝游戏
+
+    let canvas2;
+    let ctx2;
+    let player;
+    let treasure;
+    let walls = [];
+    let score2 = 0;
+
+    function startGame2() {
+      canvas2 = document.getElementById('gameCanvas2');
+      ctx2 = canvas2.getContext('2d');
+
+      // 创建玩家
+      player = {
+        x: 20,
+        y: 20,
+        width: 20,
+        height: 20,
+        speed: 5
+      };
+
+      // 创建宝藏
+      treasure = {
+        x: canvas2.width - 40,
+        y: canvas2.height - 40,
+        width: 20,
+        height: 20
+      };
+
+      // 创建迷宫墙壁
+      createMaze();
+
+      document.addEventListener('keydown', handleKeyDown2);
+
+      setInterval(gameLoop2, 30);
+    }
+
+    function handleKeyDown2(e) {
+      if (e.key === 'ArrowUp' && canMove(player.x, player.y - player.speed)) {
+        player.y -= player.speed;
+      } else if (e.key === 'ArrowDown' && canMove(player.x, player.y + player.speed)) {
+        player.y += player.speed;
+      } else if (e.key === 'ArrowLeft' && canMove(player.x - player.speed, player.y)) {
+        player.x -= player.speed;
+      } else if (e.key === 'ArrowRight' && canMove(player.x + player.speed, player.y)) {
+        player.x += player.speed;
+      }
+    }
+
+    function createMaze() {
+      for (let i = 0; i < canvas2.width; i += 40) {
+        for (let j = 0; j < canvas2.height; j += 40) {
+          if (Math.random() < 0.3) {
+            walls.push({
+              x: i,
+              y: j,
+              width: 40,
+              height: 40
+            });
+          }
+        }
+      }
+    }
+
+    function canMove(x, y) {
+      for (let i = 0; i < walls.length; i++) {
+        if (x >= walls[i].x && x < walls[i].x + walls[i].width && y >= walls[i].y && y < walls[i].y + walls[i].height) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function gameLoop2() {
+      update2();
+      draw2();
+    }
+
+    function update2() {
+      if (checkCollision(player, treasure)) {
+        score2++;
+        treasure = {
+          x: Math.random() * (canvas2.width - treasure.width),
+          y: Math.random() * (canvas2.height - treasure.height),
+          width: 20,
+          height: 20
+        };
+      }
+    }
+
+    function draw2() {
+      ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+
+      // 绘制墙壁
+      ctx2.fillStyle = 'gray';
+      for (let i = 0; i < walls.length; i++) {
+        ctx2.fillRect(walls[i].x, walls[i].y, walls[i].width, walls[i].height);
+      }
+
+      // 绘制玩家
+      ctx2.fillStyle = 'blue';
+      ctx2.fillRect(player.x, player.y, player.width, player.height);
+
+      // 绘制宝藏
+      ctx2.fillStyle = 'gold';
+      ctx2.fillRect(treasure.x, treasure.y, treasure.width, treasure.height);
+
+      // 绘制分数
+      ctx2.fillStyle = 'white';
+      ctx2.font = '20px Arial';
+      ctx2.fillText('Score: ' + score2, 10, 30);
+    }
+
+    // 游戏 3：塔防游戏（简易版）
+
+    let canvas3;
+    let ctx3;
+    let enemies = [];
+    let towers = [];
+    let score3 = 0;
+
+    function startGame3() {
+      canvas3 = document.getElementById('gameCanvas3');
+      ctx3 = canvas3.getContext('2d');
+
+      setInterval(addEnemy, 3000);
+
+      canvas3.addEventListener('click', placeTower);
+
+      setInterval(gameLoop3, 30);
+    }
+
+    function addEnemy() {
+      const size = Math.random() * 30 + 20;
+      enemies.push({
+        x: 0,
+        y: Math.random() * (canvas3.height - size),
+        width: size,
+        height: size,
+        speed: Math.random() * 2 + 1
+      });
+    }
+
+    function placeTower(e) {
+      const x = e.offsetX;
+      const y = e.offsetY;
+      towers.push({
+        x: x,
+        y: y,
+        range: 100,
+        damage: 5
+      });
+    }
+
+    function gameLoop3() {
+      update3();
+      draw3();
+    }
+
+    function update3() {
+      // 移动敌人
+      for (let i = 0; i < enemies.length; i++) {
+        enemies[i].x += enemies[i].speed;
+        if (enemies[i].x > canvas3.width) {
+          enemies.splice(i, 1);
+          score3--;
+          i--;
+        }
+      }
+
+      // 检测塔攻击敌人
+      for (let i = 0; i < towers.length; i++) {
+        for (let j = 0; j < enemies.length; j++) {
+          if (checkDistance(towers[i], enemies[j]) &&!enemies[j].isHit) {
+            enemies[j].health -= towers[i].damage;
+            if (enemies[j].health <= 0) {
+              enemies.splice(j, 1);
+              score3++;
+              j--;
+            } else {
+              enemies[j].isHit = true;
+            }
+          } else {
+            enemies[j].isHit = false;
+          }
+        }
+      }
+    }
+
+    function draw3() {
+      ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+
+      // 绘制敌人
+      ctx3.fillStyle = 'red';
+      for (let i = 0; i < enemies.length; i++) {
+        ctx3.fillRect(enemies[i].x, enemies[i].y, enemies[i].width, enemies[i].height);
+      }
+
+      // 绘制塔
+      ctx3.fillStyle = 'gray';
+      for (let i = 0; i < towers.length; i++) {
+        ctx3.beginPath();
+        ctx3.arc(towers[i].x, towers[i].y, 10, 0, 2 * Math.PI);
+        ctx3.fill();
+      }
+
+      // 绘制分数
+      ctx3.fillStyle = 'white';
+      ctx3.font = '20px Arial';
+      ctx3.fillText('Score: ' + score3, 10, 30);
+    }
+
+    function checkDistance(tower, enemy) {
+      const dx = enemy.x - tower.x;
+      const dy = enemy.y - tower.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance <= tower.range;
+    }
+  </script>
+</body>
+
+</html>
